@@ -71,6 +71,18 @@ class MatchingModel(models.Model):
             if tag.matches(text):
                 yield tag
 
+    @classmethod
+    def match_first(cls, text, tags=None):
+
+        if tags is None:
+            tags = cls.objects.all()
+
+        text = text.lower()
+        for tag in tags:
+            if tag.matches(text):
+                return tag
+        return None
+
     def matches(self, text):
 
         search_kwargs = {}
