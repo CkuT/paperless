@@ -1,3 +1,5 @@
+import unicodedata
+
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -173,7 +175,7 @@ class DocumentAdmin(DjangoQLSearchMixin, CommonAdmin):
             "all": ("paperless.css",)
         }
 
-    search_fields = ("correspondent__name", "title", "content", "tags__name")
+    search_fields = ("correspondent__name", "slugified_title", "slugified_content", "tags__name")
     readonly_fields = ("added", "file_type", "storage_type",)
     list_display = ("title", "created", "added", "thumbnail", "correspondent",
                     "tags_")
@@ -337,6 +339,14 @@ class DocumentAdmin(DjangoQLSearchMixin, CommonAdmin):
                                kind=kind, attributes=attributes, inside=inside)
 
         return format_html("<{} {}/>", kind, attributes)
+
+    def get_search_results(self, request, queryset, search_term):
+        search_term = (
+            unicodedata.normalize("NFD", search_term.casefold())
+            .encode("ASCII", "ignore")
+            .decode("utf-8")
+        )
+        return super().get_search_results(request, queryset, search_term)
 
 
 class LogAdmin(CommonAdmin):
