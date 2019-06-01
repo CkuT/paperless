@@ -10,13 +10,30 @@
 <div>
     <h3>{% trans 'Search documents' %}</h3>
 
-    <div id="toolbar"><form id="changelist-search" method="get" action="{% url 'admin:documents_document_changelist' %}">
-            <div><!-- DIV needed for valid HTML -->
-                <label for="searchbar"><img src="{% static "admin/img/search.svg" %}" alt="Search"></label>
-                <input type="text" size="40" name="q" value="" id="searchbar" autofocus="">
-                <input type="submit" value="{% trans 'Search' %}">
-            </div>
-        </form>
+    <div id="toolbar">
+        <div>
+            <form id="changelist-search" method="get" action="{% url 'admin:documents_document_changelist' %}">
+                <div>
+                    <!-- DIV needed for valid HTML -->
+                    <label for="searchbar"><img src="{% static "admin/img/search.svg" %}" alt="Search"></label>
+                    <input type="text" size="40" name="q" value="" id="searchbar" autofocus="">
+                    <input type="submit" value="{% trans 'Search' %}">
+                </div>
+            </form>
+        </div>
+        {{ can_access }}
+        {{ extra_context }}
+
+        {% if can_access %}
+        <div>
+            <form id="add-doc" method="POST" enctype="multipart/form-data" action="{% url 'admin:import_doc' %}">
+                {% csrf_token %}
+                <label for="docpicker">Add document</label>
+                <input name="documents" type="file" multiple="multiple" id="docpicker">
+                <input type="submit" value="{% trans 'Add document' %}">
+            </form>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -29,29 +46,30 @@
     <div class="module" id="recent-actions-module">
         <h2>{% trans 'Recent actions' %}</h2>
         <h3>{% trans 'My actions' %}</h3>
-            {% load log %}
-            {% get_admin_log 10 as admin_log %}
-            {% if not admin_log %}
-            <p>{% trans 'None available' %}</p>
-            {% else %}
-            <ul class="actionlist">
+        {% load log %}
+        {% get_admin_log 10 as admin_log %}
+        {% if not admin_log %}
+        <p>{% trans 'None available' %}</p>
+        {% else %}
+        <ul class="actionlist">
             {% for entry in admin_log %}
-            <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
+            <li
+                class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
                 {% if entry.is_deletion or not entry.get_admin_url %}
-                    {{ entry.object_repr }}
+                {{ entry.object_repr }}
                 {% else %}
-                    <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
                 {% endif %}
-                <br/>
+                <br />
                 {% if entry.content_type %}
-                    <span class="mini quiet">{% filter capfirst %}{{ entry.content_type }}{% endfilter %}</span>
+                <span class="mini quiet">{% filter capfirst %}{{ entry.content_type }}{% endfilter %}</span>
                 {% else %}
-                    <span class="mini quiet">{% trans 'Unknown content' %}</span>
+                <span class="mini quiet">{% trans 'Unknown content' %}</span>
                 {% endif %}
             </li>
             {% endfor %}
-            </ul>
-            {% endif %}
+        </ul>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

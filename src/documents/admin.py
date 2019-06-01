@@ -1,4 +1,7 @@
+import os
+
 from datetime import datetime, timedelta
+from os import path as ospath
 
 from django.conf import settings
 from django.contrib import admin, messages
@@ -6,8 +9,9 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.auth.models import Group, User
 from django.db import models
 from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
 from django.templatetags.static import static
-from django.urls import reverse
+from django.urls import path, reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlquote
 from django.utils.safestring import mark_safe
@@ -111,6 +115,29 @@ class RecentCorrespondentFilter(admin.RelatedFieldListFilter):
 
 class CommonAdmin(admin.ModelAdmin):
     list_per_page = settings.PAPERLESS_LIST_PER_PAGE
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path('import_doc/', self.import_doc, name='import_doc'),
+        ]
+        return my_urls + urls
+
+    def import_doc(self, request, extra_context=None):
+        for f in request.FILES.getlist('documents'):
+            filepath = ospath.join(settings.CONSUMPTION_DIR, f.name)
+            with open(filepath, 'wb+') as destination:
+                for chunk in f.chunks():
+                    destination.write(chunk)
+
+        messages.add_message(request, messages.INFO, 'The document has been successfully added')
+
+        return redirect(reverse('admin:documents_document_changelist'))
+
+    def index(self, request, extra_context=None):
+        extra_context["can_access"] = os.access(settings.CONSUMPTION_DIR, os.W_OK)
+        print(extra_context)
+        return super().index(request, extra_context)
 
 
 class CorrespondentAdmin(CommonAdmin):
